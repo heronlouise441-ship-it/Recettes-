@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Mes Recettes">
+<title>Mes Recettes</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #FAFAF8;
+    --surface: #FFFFFF;
+    --border: #EBEBEB;
+    --text: #1A1A1A;
+    --muted: #888;
+    --accent: #E8602C;
+    --accent-light: #FDF1EC;
+    --pill-bg: #F2F2F0;
+    --pill-active: #E8602C;
+    --pill-active-text: #fff;
+    --radius: 14px;
+    --shadow: 0 1px 4px rgba(0,0,0,0.07);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 100px;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 16px 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 10px;
+  }
+
+  .header h1 span { color: var(--accent); }
+
+  .search-bar {
+    display: flex;
+    align-items: center;
+    background: var(--pill-bg);
+    border-radius: 10px;
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  .search-bar input {
+    border: none;
+    background: transparent;
+    font-size: 15px;
+    width: 100%;
+    outline: none;
+    color: var(--text);
+  }
+
+  .search-bar input::placeholder { color: var(--muted); }
+
+  .search-icon { color: var(--muted); font-size: 14px; flex-shrink: 0; }
+
+  /* CATEGORY PILLS */
+  .categories {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 12px 16px;
+    scrollbar-width: none;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .categories::-webkit-scrollbar { display: none; }
+
+  .pill {
+    white-space: nowrap;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    background: var(--pill-bg);
+    color: var(--text);
+    cursor: pointer;
+    border: none;
+    transition: background 0.15s, color 0.15s;
+    flex-shrink: 0;
+  }
+
+  .pill.active {
+    background: var(--pill-active);
+    color: var(--pill-active-text);
+  }
+
+  /* RECIPE LIST */
+  .section-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 16px 16px 6px;
+  }
+
+  .recipe-list {
+    padding: 0 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .recipe-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 13px 14px;
+    gap: 10px;
+    border: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+
+  .recipe-item:first-child { border-radius: var(--radius) var(--radius) 4px 4px; }
+  .recipe-item:last-child { border-radius: 4px 4px var(--radius) var(--radius); }
+  .recipe-item:only-child { border-radius: var(--radius); }
+
+  .recipe-item + .recipe-item { border-top: none; border-radius: 4px; }
+  .recipe-item:last-child { border-radius: 4px 4px var(--radius) var(--radius); }
+
+  .recipe-name {
+    font-size: 15px;
+    font-weight: 450;
+    flex: 1;
+    line-height: 1.3;
+  }
+
+  .recipe-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+
+  .btn-link {
+    background: var(--accent-light);
+    color: var(--accent);
+    border: none;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .btn-delete {
+    background: none;
+    border: none;
+    color: #CCC;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+  }
+
+  .btn-delete:hover { color: #E53935; }
+
+  .no-link {
+    color: var(--muted);
+    font-size: 12px;
+    font-style: italic;
+  }
+
+  /* EMPTY STATE */
+  .empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+    font-size: 15px;
+  }
+
+  /* FAB - ADD BUTTON */
+  .fab {
+    position: fixed;
+    bottom: 24px;
+    right: 20px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 28px;
+    padding: 14px 20px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(232,96,44,0.4);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 300;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  .modal-overlay.open {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .modal {
+    background: var(--surface);
+    border-radius: 20px 20px 0 0;
+    padding: 20px 20px 40px;
+    width: 100%;
+    max-width: 500px;
+    transform: translateY(30px);
+    transition: transform 0.25s ease;
+  }
+
+  .modal-overlay.open .modal { transform: translateY(0); }
+
+  .modal h2 { font-size: 18px; font-weight: 700; margin-bottom: 18px; }
+
+  .modal label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 6px;
+    margin-top: 14px;
+  }
+
+  .modal input, .modal select {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 13px;
+    font-size: 15px;
+    outline: none;
+    color: var(--text);
+    background: var(--bg);
+    transition: border-color 0.15s;
+  }
+
+  .modal input:focus, .modal select:focus { border-color: var(--accent); }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 22px;
+  }
+
+  .btn-cancel {
+    flex: 1;
+    padding: 13px;
+    border-radius: 12px;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+  }
+
+  .btn-save {
+    flex: 2;
+    padding: 13px;
+    border-radius: 12px;
+    border: none;
+    background: var(--accent);
+    color: white;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  /* COUNT BADGE */
+  .count-badge {
+    font-size: 12px;
+    color: var(--muted);
+    padding: 0 16px 8px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🍽 Mes <span>Recettes</span></h1>
+  <div class="search-bar">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="searchInput" placeholder="Rechercher une recette…" oninput="render()">
+  </div>
+</div>
+
+<div class="categories" id="categoryBar"></div>
+
+<div id="app"></div>
+
+<button class="fab" onclick="openModal()">＋ Ajouter</button>
+
+<div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <h2>Nouvelle recette</h2>
+    <label>Nom de la recette *</label>
+    <input type="text" id="inputName" placeholder="Ex : Lasagne courgette">
+    <label>Catégorie</label>
+    <select id="inputCat">
+      <option value="🥗 Salades">🥗 Salades</option>
+      <option value="🥧 Tartes · Quiches · Pizzas">🥧 Tartes · Quiches · Pizzas</option>
+      <option value="🍝 Pâtes · Riz · Risotto">🍝 Pâtes · Riz · Risotto</option>
+      <option value="🍲 Plats uniques" selected>🍲 Plats uniques</option>
+      <option value="🍰 Desserts">🍰 Desserts</option>
+    </select>
+    <label>Lien (optionnel)</label>
+    <input type="url" id="inputUrl" placeholder="https://…">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Annuler</button>
+      <button class="btn-save" onclick="saveRecipe()">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CATEGORIES = [
+  "🥗 Salades",
+  "🥧 Tartes · Quiches · Pizzas",
+  "🍝 Pâtes · Riz · Risotto",
+  "🍲 Plats uniques",
+  "🍰 Desserts"
+];
+
+const DEFAULT_RECIPES = [
+  // SALADES
+  {id:'s1', cat:'🥗 Salades', name:'Salade pâtes poulet basilic', url:'https://www.instagram.com/p/CP5TPBeJ2H6/'},
+  {id:'s2', cat:'🥗 Salades', name:'Salade de pâtes aux courgettes', url:'https://www.instagram.com/reel/CiAxa8ajDJ3/'},
+  {id:'s3', cat:'🥗 Salades', name:'Salade pâtes aubergine fêta tomate cerise dinde', url:''},
+  {id:'s4', cat:'🥗 Salades', name:'Salade melon jambon cru tomates', url:'https://www.instagram.com/reel/C_TLx-2C0Rl/'},
+  {id:'s5', cat:'🥗 Salades', name:'Salade concombre saumon fumé', url:''},
+  {id:'s6', cat:'🥗 Salades', name:'Salade melon jambon cru fêta', url:''},
+  {id:'s7', cat:'🥗 Salades', name:'Salade Boursin avocat poulet', url:''},
+  {id:'s8', cat:'🥗 Salades', name:'Salade de pâtes poivrons', url:'https://vm.tiktok.com/ZGJVNaskp/'},
+  {id:'s9', cat:'🥗 Salades', name:'Salade orzo', url:'https://vm.tiktok.com/ZGJgafJug/'},
+  {id:'s10', cat:'🥗 Salades', name:'Salade de lentilles (carottes, fêta, tomates cerise, lardons)', url:''},
+  {id:'s11', cat:'🥗 Salades', name:'Salade pâtes légumes rôtis', url:'https://vm.tiktok.com/ZGJsdvdfc/'},
+  {id:'s12', cat:'🥗 Salades', name:'Salade de riz à l\'italienne', url:'https://www.lidl-recettes.fr/recettes/salade-de-riz-a-l-italienne'},
+  {id:'s13', cat:'🥗 Salades', name:'Salade composée', url:'https://vm.tiktok.com/ZGejyMWpq/'},
+  {id:'s14', cat:'🥗 Salades', name:'Salade de saumon', url:'https://www.instagram.com/reel/C2uNI6XsI_s/'},
+  {id:'s15', cat:'🥗 Salades', name:'Salade pâtes concombre saumon', url:'https://www.instagram.com/reel/C9juVNGs2-a/'},
+  {id:'s16', cat:'🥗 Salades', name:'Salade orzo Méditerranée', url:'https://www.instagram.com/reel/C6_oECks5SO/'},
+  {id:'s17', cat:'🥗 Salades', name:'Tomate Burrata', url:''},
+  {id:'s18', cat:'🥗 Salades', name:'Salade mangue avocat', url:'https://www.instagram.com/reel/DJE7HNtCVzs/'},
+  {id:'s19', cat:'🥗 Salades', name:'Sushi bowl', url:'https://www.instagram.com/reel/DH5KLpXtlEQ/'},
+  {id:'s20', cat:'🥗 Salades', name:'Salade quinoa tomate roquette avocat fêta', url:''},
+  {id:'s21', cat:'🥗 Salades', name:'Salade lentille', url:'https://www.instagram.com/reel/DLAgzqbN96I/'},
+  {id:'s22', cat:'🥗 Salades', name:'Salade quinoa', url:'https://www.instagram.com/reel/DK9Th7EsQIA/'},
+  {id:'s23', cat:'🥗 Salades', name:'Salade blé tomate séchées roquette chèvre frais', url:''},
+  {id:'s24', cat:'🥗 Salades', name:'Salade liégeoise (pomme de terre, haricots, lardons)', url:''},
+  {id:'s25', cat:'🥗 Salades', name:'Tomate farcie thon', url:''},
+  {id:'s26', cat:'🥗 Salades', name:'Salade de melon', url:'https://www.instagram.com/reel/DLSihgyCxXi/'},
+  {id:'s27', cat:'🥗 Salades', name:'Salade riz pesto rosso', url:'https://www.instagram.com/reel/DMLGqv6sSr4/'},
+  {id:'s28', cat:'🥗 Salades', name:'Salade de riz thon tomate', url:''},
+  {id:'s29', cat:'🥗 Salades', name:'Salade jambon cru roquette tomate cerise parmesan', url:''},
+  {id:'s30', cat:'🥗 Salades', name:'Salade quinoa concombre poivrons grillés fêta oignon rouge', url:''},
+  {id:'s31', cat:'🥗 Salades', name:'Salade lentilles chorizo', url:'https://www.instagram.com/reel/DV_peOAiClk/'},
+  {id:'s32', cat:'🥗 Salades', name:'Salade de pois chiches', url:'https://vm.tiktok.com/ZNdHoDSKB/'},
+  {id:'s33', cat:'🥗 Salades', name:'Salade melon concombre pastèque avocat burrata', url:''},
+  {id:'s34', cat:'🥗 Salades', name:'Salade quinoa poulet avocat tomate cerise fêta', url:''},
+  {id:'s35', cat:'🥗 Salades', name:'Salade thaï', url:'https://vm.tiktok.com/ZNRWdHVDH/'},
+  {id:'s36', cat:'🥗 Salades', name:'Salade gyoza tomate cerise concombre', url:''},
+  {id:'s37', cat:'🥗 Salades', name:'Salade melon avocat', url:'https://www.instagram.com/reel/DZDHpBaNEH3/'},
+  {id:'s38', cat:'🥗 Salades', name:'Salade perles saumon', url:'https://www.instagram.com/reel/DZp0mGnMqNB/'},
+  {id:'s39', cat:'🥗 Salades', name:'Salade orzo (été)', url:'https://www.instagram.com/reel/DZ5NFz2szv7/'},
+  {id:'s40', cat:'🥗 Salades', name:'Salade melon tomate mozzarella', url:''},
+  {id:'s41', cat:'🥗 Salades', name:'Salade melon', url:'https://www.instagram.com/reel/DYy78cMswcW/'},
+  {id:'s42', cat:'🥗 Salades', name:'Salade ravioles', url:'https://www.instagram.com/reel/DUBgYEZDbez/'},
+  {id:'s43', cat:'🥗 Salades', name:'Salade patate douce lentille', url:'https://vm.tiktok.com/ZNdY4neuF/'},
+  {id:'s44', cat:'🥗 Salades', name:'Salade légumes rôtis', url:'https://www.instagram.com/reel/DJoT050MEhP/'},
+  {id:'s45', cat:'🥗 Salades', name:'Salade poulet', url:'https://vm.tiktok.com/ZNRQdM6dy/'},
+  {id:'s46', cat:'🥗 Salades', name:'Salade de pâtes grillées', url:'https://vm.tiktok.com/ZNRmMeBMn/'},
+  {id:'s47', cat:'🥗 Salades', name:'Salade pomme de terre rôties', url:''},
+
+  // TARTES
+  {id:'t1', cat:'🥧 Tartes · Quiches · Pizzas', name:'Tarte tomate chèvre', url:'https://www.instagram.com/p/CgZ2z3XsEKU/'},
+  {id:'t2', cat:'🥧 Tartes · Quiches · Pizzas', name:'Flammekueche', url:'https://www.instagram.com/p/Ci7cYLCsNyX/'},
+  {id:'t3', cat:'🥧 Tartes · Quiches · Pizzas', name:'Calzone', url:'https://www.instagram.com/p/CZ6g_flMdNJ/'},
+  {id:'t4', cat:'🥧 Tartes · Quiches · Pizzas', name:'Tarte courgettes chèvre', url:'https://www.instagram.com/p/CcsE_nBsJXo/'},
+  {id:'t5', cat:'🥧 Tartes · Quiches · Pizzas', name:'Quiche tomate chèvre jambon', url:'https://www.instagram.com/p/CmB0UT5MusY/'},
+  {id:'t6', cat:'🥧 Tartes · Quiches · Pizzas', name:'Pizza', url:'https://vm.tiktok.com/ZGJVNU27R/'},
+  {id:'t7', cat:'🥧 Tartes · Quiches · Pizzas', name:'Pizza balls', url:'https://www.instagram.com/reel/CwFsabkMXw-/'},
+  {id:'t8', cat:'🥧 Tartes · Quiches · Pizzas', name:'Tarte pesto poireaux burrata', url:'https://www.instagram.com/reel/Cm_9cgXIIfd/'},
+  {id:'t9', cat:'🥧 Tartes · Quiches · Pizzas', name:'Tarte chèvre tomate cerise', url:'https://www.lidl-recettes.fr/recettes/tarte-au-fromage-de-chevre-et-tomates-cerises'},
+  {id:'t10', cat:'🥧 Tartes · Quiches · Pizzas', name:'Tarte poireaux jambon', url:'https://www.instagram.com/reel/C2uVD9rsgLP/'},
+  {id:'t11', cat:'🥧 Tartes · Quiches · Pizzas', name:'Tarte courgette ricotta', url:'https://www.instagram.com/reel/C-A0QQdi36W/'},
+  {id:'t12', cat:'🥧 Tartes · Quiches · Pizzas', name:'Feuilleté chèvre miel bacon', url:'https://www.instagram.com/reel/C8Cb4i8NP8t/'},
+  {id:'t13', cat:'🥧 Tartes · Quiches · Pizzas', name:'Feuilleté bacon champignons', url:''},
+  {id:'t14', cat:'🥧 Tartes · Quiches · Pizzas', name:'Tarte courgette chèvre miel', url:'https://vm.tiktok.com/ZGeTrASC8/'},
+  {id:'t15', cat:'🥧 Tartes · Quiches · Pizzas', name:'Feuilleté saumon poireaux', url:'https://www.instagram.com/reel/Cv-KOLwIzkD/'},
+  {id:'t16', cat:'🥧 Tartes · Quiches · Pizzas', name:'Tarte brocoli chèvre', url:''},
+  {id:'t17', cat:'🥧 Tartes · Quiches · Pizzas', name:'Muffin brocolis fêta', url:'https://www.instagram.com/reel/DFAs7i6iz_l/'},
+  {id:'t18', cat:'🥧 Tartes · Quiches · Pizzas', name:'Tarte poireaux allumettes de bacon', url:'https://vm.tiktok.com/ZNd3JaqGy/'},
+  {id:'t19', cat:'🥧 Tartes · Quiches · Pizzas', name:'Tarte poivron chèvre chorizo', url:'https://vm.tiktok.com/ZNdpBpqbB/'},
+  {id:'t20', cat:'🥧 Tartes · Quiches · Pizzas', name:'Tarte tomate cerise courgette chèvre frais', url:''},
+  {id:'t21', cat:'🥧 Tartes · Quiches · Pizzas', name:'Tarte tatin tomate cerise fêta', url:''},
+  {id:'t22', cat:'🥧 Tartes · Quiches · Pizzas', name:'Mini quiche', url:'https://www.instagram.com/reel/DNTWuhrMPyv/'},
+  {id:'t23', cat:'🥧 Tartes · Quiches · Pizzas', name:'Tarte butternut', url:'https://vm.tiktok.com/ZNdvw2VrB/'},
+  {id:'t24', cat:'🥧 Tartes · Quiches · Pizzas', name:'Pâte brisée', url:'https://vm.tiktok.com/ZNd3J9F9t/'},
+  {id:'t25', cat:'🥧 Tartes · Quiches · Pizzas', name:'Galette de sarrasin', url:''},
+  {id:'t26', cat:'🥧 Tartes · Quiches · Pizzas', name:'Pinsa grand frais', url:''},
+  {id:'t27', cat:'🥧 Tartes · Quiches · Pizzas', name:'Clafoutis salé', url:'https://www.instagram.com/reel/DKr3awYCa6I/'},
+  {id:'t28', cat:'🥧 Tartes · Quiches · Pizzas', name:'Clafoutis tomate mozza', url:'https://vm.tiktok.com/ZNdm9x4Ho/'},
+
+  // PATES RIZ
+  {id:'p1', cat:'🍝 Pâtes · Riz · Risotto', name:'Nouilles sautées bœuf & légumes', url:'https://www.instagram.com/p/Cgl4roEseAW/'},
+  {id:'p2', cat:'🍝 Pâtes · Riz · Risotto', name:'Pâtes brocoli', url:'https://www.instagram.com/reel/CkgaBgmIPDA/'},
+  {id:'p3', cat:'🍝 Pâtes · Riz · Risotto', name:'Pâtes tomate cerise épinards', url:''},
+  {id:'p4', cat:'🍝 Pâtes · Riz · Risotto', name:'Risotto', url:'https://www.instagram.com/reel/CtOg_c0OIy5/'},
+  {id:'p5', cat:'🍝 Pâtes · Riz · Risotto', name:'Pâtes saumon courgette', url:'https://vm.tiktok.com/ZGJppqM1J/'},
+  {id:'p6', cat:'🍝 Pâtes · Riz · Risotto', name:'Nouilles udon', url:'https://vm.tiktok.com/ZGJppqX6F/'},
+  {id:'p7', cat:'🍝 Pâtes · Riz · Risotto', name:'Pâtes au chorizo', url:''},
+  {id:'p8', cat:'🍝 Pâtes · Riz · Risotto', name:'One pot rice', url:'https://vm.tiktok.com/ZGJpvEyds/'},
+  {id:'p9', cat:'🍝 Pâtes · Riz · Risotto', name:'Pâtes tomate cerise chèvre', url:'https://www.instagram.com/reel/CvfTnIAN7xT/'},
+  {id:'p10', cat:'🍝 Pâtes · Riz · Risotto', name:'Poulet pesto riz', url:'https://vm.tiktok.com/ZGJsfbtw7/'},
+  {id:'p11', cat:'🍝 Pâtes · Riz · Risotto', name:'Risotto courgettes lardons chèvre', url:''},
+  {id:'p12', cat:'🍝 Pâtes · Riz · Risotto', name:'Risotto légumes soleil', url:'https://www.instagram.com/reel/C_LltdxI_Z6/'},
+  {id:'p13', cat:'🍝 Pâtes · Riz · Risotto', name:'Pâtes ricotta aubergine tomate', url:'https://www.instagram.com/reel/C_FsFIFIYWf/'},
+  {id:'p14', cat:'🍝 Pâtes · Riz · Risotto', name:'Boulettes de poulet riz', url:'https://vm.tiktok.com/ZGeQg2mk9/'},
+  {id:'p15', cat:'🍝 Pâtes · Riz · Risotto', name:'Bœuf sauté brocoli riz', url:''},
+  {id:'p16', cat:'🍝 Pâtes · Riz · Risotto', name:'Pâtes poulet poivron curry', url:''},
+  {id:'p17', cat:'🍝 Pâtes · Riz · Risotto', name:'Riz à l\'espagnole', url:'https://www.instagram.com/reel/C7ZQKgmI0qe/'},
+  {id:'p18', cat:'🍝 Pâtes · Riz · Risotto', name:'Pâtes saumon rôti', url:'https://www.tiktok.com/@louloukitchen_/video/7378447021977472288'},
+  {id:'p19', cat:'🍝 Pâtes · Riz · Risotto', name:'Riz poivrons viande hachée', url:'https://www.instagram.com/reel/C8cgS0to8wk/'},
+  {id:'p20', cat:'🍝 Pâtes · Riz · Risotto', name:'Riz tomate fêta', url:'https://www.instagram.com/reel/C7JV2_tMDTA/'},
+  {id:'p21', cat:'🍝 Pâtes · Riz · Risotto', name:'Gnocchi tomates courgettes', url:''},
+  {id:'p22', cat:'🍝 Pâtes · Riz · Risotto', name:'Orzo courgettes lardons', url:'https://www.instagram.com/p/Cxs-8xALmpL/'},
+  {id:'p23', cat:'🍝 Pâtes · Riz · Risotto', name:'Orzo courgette tomate cerise', url:'https://www.hellofresh.lu/recipes/orzo-courgettes-et-tomates-cerises-5ea0234b61c44b3f723c1b5f'},
+  {id:'p24', cat:'🍝 Pâtes · Riz · Risotto', name:'Spaghetti bolognaise courgette carotte', url:'https://vm.tiktok.com/ZGeHMGkCn/'},
+  {id:'p25', cat:'🍝 Pâtes · Riz · Risotto', name:'Dinde riz sauce soja', url:'https://vm.tiktok.com/ZGeHUGMNs/'},
+  {id:'p26', cat:'🍝 Pâtes · Riz · Risotto', name:'Riz cantonnais / Poulet aux légumes', url:'https://www.instagram.com/p/C19w94yOmN4/'},
+  {id:'p27', cat:'🍝 Pâtes · Riz · Risotto', name:'Riz champignons tomates', url:'https://www.instagram.com/reel/CktXGagjrPj/'},
+  {id:'p28', cat:'🍝 Pâtes · Riz · Risotto', name:'Pâtes champignons Boursin', url:''},
+  {id:'p29', cat:'🍝 Pâtes · Riz · Risotto', name:'Riz poireaux lardons fêta', url:'https://www.instagram.com/reel/C3ARG1aMpgQ/'},
+  {id:'p30', cat:'🍝 Pâtes · Riz · Risotto', name:'Pâtes butternut', url:'https://vm.tiktok.com/ZGJvHcM2J/'},
+  {id:'p31', cat:'🍝 Pâtes · Riz · Risotto', name:'Risotto potimarron', url:'https://www.instagram.com/p/CyLxrbcNaN-/'},
+  {id:'p32', cat:'🍝 Pâtes · Riz · Risotto', name:'Risotto patate douce chorizo', url:'https://www.instagram.com/reel/CzrMN0aim3G/'},
+  {id:'p33', cat:'🍝 Pâtes · Riz · Risotto', name:'Gnocchis poireaux jambon parmesan', url:'https://www.instagram.com/reel/CzwUaV7I0vb/'},
+  {id:'p34', cat:'🍝 Pâtes · Riz · Risotto', name:'Macaroni légumes', url:'https://www.instagram.com/reel/CwNp53vNS5L/'},
+  {id:'p35', cat:'🍝 Pâtes · Riz · Risotto', name:'Pâtes courgettes bacon', url:'https://vm.tiktok.com/ZGemWRA42/'},
+  {id:'p36', cat:'🍝 Pâtes · Riz · Risotto', name:'Risotto tomate pesto mozza', url:'https://www.instagram.com/reel/C5qHQMKsNwS/'},
+  {id:'p37', cat:'🍝 Pâtes · Riz · Risotto', name:'Pâtes poulet boursin', url:'https://vm.tiktok.com/ZGecM2UG9/'},
+  {id:'p38', cat:'🍝 Pâtes · Riz · Risotto', name:'Riz fêta carotte miel', url:'https://www.instagram.com/reel/C8r_Sd-NjkV/'},
+  {id:'p39', cat:'🍝 Pâtes · Riz · Risotto', name:'Nouilles poulet légumes', url:'https://www.instagram.com/reel/C8XIucBtFFc/'},
+  {id:'p40', cat:'🍝 Pâtes · Riz · Risotto', name:'Pâtes spaghettis crevettes', url:'https://www.instagram.com/reel/C3QVAc_MoDW/'},
+  {id:'p41', cat:'🍝 Pâtes · Riz · Risotto', name:'Nouilles bœuf', url:'https://www.instagram.com/reel/C3VCuUnoee4/'},
+  {id:'p42', cat:'🍝 Pâtes · Riz · Risotto', name:'Risotto chorizo petits pois', url:'https://www.instagram.com/p/DCHi9ygtnzZ/'},
+  {id:'p43', cat:'🍝 Pâtes · Riz · Risotto', name:'Orzo butternut gorgonzola', url:'https://www.instagram.com/reel/DCR4MEaMnPW/'},
+  {id:'p44', cat:'🍝 Pâtes · Riz · Risotto', name:'Orzo épinards Boursin', url:'https://www.instagram.com/reel/DE5NAlcNKoi/'},
+  {id:'p45', cat:'🍝 Pâtes · Riz · Risotto', name:'One pot orzo', url:'https://www.instagram.com/reel/DFDe6FPCAWL/'},
+  {id:'p46', cat:'🍝 Pâtes · Riz · Risotto', name:'One pot noodle', url:'https://www.instagram.com/reel/DGGXLa3IlFr/'},
+  {id:'p47', cat:'🍝 Pâtes · Riz · Risotto', name:'One pot orzo petit pois', url:'https://www.instagram.com/reel/DFDXkSEimlD/'},
+  {id:'p48', cat:'🍝 Pâtes · Riz · Risotto', name:'Nouilles udon poulet', url:'https://www.instagram.com/reel/DNQC3p5oWhI/'},
+  {id:'p49', cat:'🍝 Pâtes · Riz · Risotto', name:'Orzo poulet', url:'https://vm.tiktok.com/ZNd6v61R2/'},
+  {id:'p50', cat:'🍝 Pâtes · Riz · Risotto', name:'Orzo poulet moutarde', url:'https://vm.tiktok.com/ZNdKtsbWp/'},
+  {id:'p51', cat:'🍝 Pâtes · Riz · Risotto', name:'Orzo épinards chorizo', url:'https://vm.tiktok.com/ZNdjKWURG/'},
+  {id:'p52', cat:'🍝 Pâtes · Riz · Risotto', name:'Orzo courgette crevette', url:'https://www.instagram.com/reel/DLVC72kIMjS/'},
+  {id:'p53', cat:'🍝 Pâtes · Riz · Risotto', name:'Orzo butternut burrata', url:'https://www.instagram.com/reel/DQUdO4sDIxt/'},
+  {id:'p54', cat:'🍝 Pâtes · Riz · Risotto', name:'Orzo saumon', url:'https://vm.tiktok.com/ZNRu7dhw9/'},
+  {id:'p55', cat:'🍝 Pâtes · Riz · Risotto', name:'Orzo poulet brocoli', url:'https://vm.tiktok.com/ZNRQpGyUd/'},
+  {id:'p56', cat:'🍝 Pâtes · Riz · Risotto', name:'Orzo oignons poulet', url:'https://vm.tiktok.com/ZNRTLvgKn/'},
+  {id:'p57', cat:'🍝 Pâtes · Riz · Risotto', name:'Orzo courgette petit pois boulette', url:'https://www.instagram.com/reel/DJW4BhsMcWK/'},
+  {id:'p58', cat:'🍝 Pâtes · Riz · Risotto', name:'Riz courgette lardon', url:'https://vm.tiktok.com/ZNR7gdUoY/'},
+  {id:'p59', cat:'🍝 Pâtes · Riz · Risotto', name:'Riz à la mexicaine', url:'https://vm.tiktok.com/ZNRvAPMGX/'},
+  {id:'p60', cat:'🍝 Pâtes · Riz · Risotto', name:'Riz viande hachée tomate', url:'https://www.instagram.com/reel/DOL_CWyDJw-/'},
+  {id:'p61', cat:'🍝 Pâtes · Riz · Risotto', name:'Riz poulet pesto rosso', url:'https://vm.tiktok.com/ZNRxu3SLQ/'},
+  {id:'p62', cat:'🍝 Pâtes · Riz · Risotto', name:'Risotto coquillette courgette', url:''},
+  {id:'p63', cat:'🍝 Pâtes · Riz · Risotto', name:'Risotto chorizo poivron', url:''},
+  {id:'p64', cat:'🍝 Pâtes · Riz · Risotto', name:'Gnocchi saumon légumes', url:'https://vm.tiktok.com/ZNdECgTGK/'},
+  {id:'p65', cat:'🍝 Pâtes · Riz · Risotto', name:'Gnocchi chorizo chèvre', url:'https://vm.tiktok.com/ZNdE7wyY3/'},
+  {id:'p66', cat:'🍝 Pâtes · Riz · Risotto', name:'Gnocchi saumon boursin', url:'https://vm.tiktok.com/ZNdotuRtX/'},
+  {id:'p67', cat:'🍝 Pâtes · Riz · Risotto', name:'Gnocchi champignon lardons', url:'https://vm.tiktok.com/ZNRHSHvyL/'},
+  {id:'p68', cat:'🍝 Pâtes · Riz · Risotto', name:'Gnocchi courgette parmesan', url:'https://vm.tiktok.com/ZNRHfPQVg/'},
+  {id:'p69', cat:'🍝 Pâtes · Riz · Risotto', name:'Gnocchis légume chèvre pané', url:'https://www.instagram.com/reel/DJ4RsTWsQi8/'},
+  {id:'p70', cat:'🍝 Pâtes · Riz · Risotto', name:'One pot gnocchi tomate cerise épinard', url:'https://www.instagram.com/reel/DOMGQv6Da_h/'},
+  {id:'p71', cat:'🍝 Pâtes · Riz · Risotto', name:'Pâtes tomate cerise Boursin', url:''},
+  {id:'p72', cat:'🍝 Pâtes · Riz · Risotto', name:'Pâtes butternut lardons comté', url:'https://www.instagram.com/reel/DQcSVKQDBl7/'},
+  {id:'p73', cat:'🍝 Pâtes · Riz · Risotto', name:'Pâtes saumon épinards Boursin', url:'https://www.instagram.com/reel/C_3JlCyoGS2/'},
+  {id:'p74', cat:'🍝 Pâtes · Riz · Risotto', name:'Pâtes légumes confits', url:'https://vm.tiktok.com/ZNdvtGn7V/'},
+  {id:'p75', cat:'🍝 Pâtes · Riz · Risotto', name:'Pâtes aubergines chorizo parmesan', url:'https://www.instagram.com/reel/DHtaKS8ooVR/'},
+  {id:'p76', cat:'🍝 Pâtes · Riz · Risotto', name:'One pot pasta butternut', url:'https://www.instagram.com/reel/DPjf7MuCA-y/'},
+  {id:'p77', cat:'🍝 Pâtes · Riz · Risotto', name:'One pot pasta chorizo épinard', url:'https://vm.tiktok.com/ZNR7FuW8R/'},
+  {id:'p78', cat:'🍝 Pâtes · Riz · Risotto', name:'One pot pâtes', url:'https://www.instagram.com/reel/DTYQeZDiNnG/'},
+  {id:'p79', cat:'🍝 Pâtes · Riz · Risotto', name:'Pâtes au saumon', url:'https://vm.tiktok.com/ZNR7YSQnv/'},
+  {id:'p80', cat:'🍝 Pâtes · Riz · Risotto', name:'Tagliatelle saumon courgette', url:'https://www.instagram.com/reel/DJ4SgkyIdSt/'},
+  {id:'p81', cat:'🍝 Pâtes · Riz · Risotto', name:'Tagliatelles pesto rosso', url:'https://vm.tiktok.com/ZNds1cLjS/'},
+  {id:'p82', cat:'🍝 Pâtes · Riz · Risotto', name:'Saumon Boursin tomate cerise pâtes', url:'https://vm.tiktok.com/ZNdBWUqoS/'},
+  {id:'p83', cat:'🍝 Pâtes · Riz · Risotto', name:'Boulette poulet et pâtes', url:'https://www.instagram.com/p/DL2Cu0cCJPk/'},
+  {id:'p84', cat:'🍝 Pâtes · Riz · Risotto', name:'Coquillette tomate rôties', url:'https://www.instagram.com/reel/DZKwQcjtBlu/'},
+  {id:'p85', cat:'🍝 Pâtes · Riz · Risotto', name:'One pot blé haricots viande', url:'https://www.instagram.com/reel/DQPPLXdiBOA/'},
+  {id:'p86', cat:'🍝 Pâtes · Riz · Risotto', name:'One pot butternut chorizo', url:'https://vm.tiktok.com/ZNdKEs52u/'},
+  {id:'p87', cat:'🍝 Pâtes · Riz · Risotto', name:'One pot crozet butternut', url:'https://www.instagram.com/reel/DPEqhRZCkfU/'},
+  {id:'p88', cat:'🍝 Pâtes · Riz · Risotto', name:'Perles courgettes crevette', url:'https://vm.tiktok.com/ZNRnRXWLR/'},
+  {id:'p89', cat:'🍝 Pâtes · Riz · Risotto', name:'Riz espagnol', url:'https://vm.tiktok.com/ZNRqvshTJ/'},
+
+  // PLATS
+  {id:'pl1', cat:'🍲 Plats uniques', name:'Nems', url:'https://www.cuisineaz.com/recettes/nems-au-poulet-81435.aspx'},
+  {id:'pl2', cat:'🍲 Plats uniques', name:'Tortillas version samoussa', url:'https://www.instagram.com/p/CdGkSndNon-/'},
+  {id:'pl3', cat:'🍲 Plats uniques', name:'Bœuf aux oignons / Brocolis', url:'https://anaca3.com/blog/recette-de-boeuf-a-loignon-chinois/'},
+  {id:'pl4', cat:'🍲 Plats uniques', name:'Cheese naan', url:'https://www.instagram.com/p/ChZdBkgs5cd/'},
+  {id:'pl5', cat:'🍲 Plats uniques', name:'Moussaka', url:'https://instagram.com/p/Cisb1Sssx5y'},
+  {id:'pl6', cat:'🍲 Plats uniques', name:'Curry de légumes', url:'https://www.instagram.com/p/CjIDB2Vocg3/'},
+  {id:'pl7', cat:'🍲 Plats uniques', name:'Hachis Parmentier chou-fleur poulet', url:'https://www.instagram.com/p/ClviBF1MllM/'},
+  {id:'pl8', cat:'🍲 Plats uniques', name:'Poulet courgettes chorizo', url:'https://www.instagram.com/p/Cne87iIsGMT/'},
+  {id:'pl9', cat:'🍲 Plats uniques', name:'Lasagnes bœuf légumes', url:'https://www.instagram.com/p/Cn2KpPQsepv/'},
+  {id:'pl10', cat:'🍲 Plats uniques', name:'Poêlée pomme de terre', url:'https://www.instagram.com/p/CoAbV_2IYj1/'},
+  {id:'pl11', cat:'🍲 Plats uniques', name:'Poulet champignons carottes moutarde', url:'https://www.instagram.com/reel/Cpxt2TSD5Ko/'},
+  {id:'pl12', cat:'🍲 Plats uniques', name:'Lasagnes de courgette', url:'https://vm.tiktok.com/ZGJ4E4Yjo/'},
+  {id:'pl13', cat:'🍲 Plats uniques', name:'Poulet tomates parmesan', url:'https://vm.tiktok.com/ZGJpRcxne/'},
+  {id:'pl14', cat:'🍲 Plats uniques', name:'Tomates à la provençale', url:''},
+  {id:'pl15', cat:'🍲 Plats uniques', name:'Curry de courgettes', url:'https://www.instagram.com/reel/CvzzEYEsBpH/'},
+  {id:'pl16', cat:'🍲 Plats uniques', name:'Croquettes d\'aubergines', url:'https://www.instagram.com/reel/Cvpp24isyUn/'},
+  {id:'pl17', cat:'🍲 Plats uniques', name:'Frites de courgettes', url:''},
+  {id:'pl18', cat:'🍲 Plats uniques', name:'Chili con carne', url:''},
+  {id:'pl19', cat:'🍲 Plats uniques', name:'Légumes fêta', url:'https://www.instagram.com/reel/CwUset0siyO/'},
+  {id:'pl20', cat:'🍲 Plats uniques', name:'Naan saumon boursin', url:'https://www.instagram.com/reel/Cwk6uZ7sre4/'},
+  {id:'pl21', cat:'🍲 Plats uniques', name:'Croque courgettes', url:'https://www.instagram.com/reel/Cuhcj-LO9ip/'},
+  {id:'pl22', cat:'🍲 Plats uniques', name:'Boulettes de poulet sauce champignons', url:'https://www.instagram.com/reel/CxK4C8DsjFt/'},
+  {id:'pl23', cat:'🍲 Plats uniques', name:'Bruschetta', url:'https://www.instagram.com/p/Cvc0qPuIPLe/'},
+  {id:'pl24', cat:'🍲 Plats uniques', name:'Butternut farci', url:'https://www.instagram.com/reel/CxvvogAMX76/'},
+  {id:'pl25', cat:'🍲 Plats uniques', name:'Curry de poireaux', url:'https://www.instagram.com/reel/Cx_CdbPMEVj/'},
+  {id:'pl26', cat:'🍲 Plats uniques', name:'Lasagnes de butternut', url:'https://www.instagram.com/reel/CzLmiR-stl4/'},
+  {id:'pl27', cat:'🍲 Plats uniques', name:'Pomme de terre saumon', url:'https://www.instagram.com/reel/CzbuWKqIZne/'},
+  {id:'pl28', cat:'🍲 Plats uniques', name:'Saumon à la toscane', url:'https://www.yumelise.fr/saumon-toscane/'},
+  {id:'pl29', cat:'🍲 Plats uniques', name:'Poulet à l\'italienne', url:'https://www.instagram.com/p/CzWi-HqipxP/'},
+  {id:'pl30', cat:'🍲 Plats uniques', name:'Gratin dauphinois pommes de terre et butternut', url:'https://www.instagram.com/p/CixxRsvq57G/'},
+  {id:'pl31', cat:'🍲 Plats uniques', name:'Tomates farcies', url:''},
+  {id:'pl32', cat:'🍲 Plats uniques', name:'Gratin courgettes au Boursin', url:'https://www.lidl-recettes.fr/recettes/gratin-de-courgettes-au-boursin'},
+  {id:'pl33', cat:'🍲 Plats uniques', name:'Gratin de poireaux et jambon à l\'ancienne', url:'https://www.lidl-recettes.fr/recettes/gratin-de-poireaux-et-jambon-a-l-ancienne'},
+  {id:'pl34', cat:'🍲 Plats uniques', name:'Gratin de potimarron au chèvre', url:'https://www.lidl-recettes.fr/recettes/gratin-de-potimarron-au-chevre'},
+  {id:'pl35', cat:'🍲 Plats uniques', name:'Gratin dauphinois butternut', url:'https://www.lidl-recettes.fr/recettes/gratin-dauphinois-de-butternut'},
+  {id:'pl36', cat:'🍲 Plats uniques', name:'Cannelloni', url:''},
+  {id:'pl37', cat:'🍲 Plats uniques', name:'Roulés aubergine tomate mozza', url:'https://www.instagram.com/reel/CuPhnFgraML/'},
+  {id:'pl38', cat:'🍲 Plats uniques', name:'Wrap façon tacos', url:'https://www.instagram.com/reel/C2fc-8Is620/'},
+  {id:'pl39', cat:'🍲 Plats uniques', name:'Aubergine viande hachée mozza', url:'https://vm.tiktok.com/ZGeke7JCc/'},
+  {id:'pl40', cat:'🍲 Plats uniques', name:'Courgettes Alfredo', url:'https://www.instagram.com/p/C3k0W_8o2r_/'},
+  {id:'pl41', cat:'🍲 Plats uniques', name:'Gratin pâtes brocolis jambon', url:''},
+  {id:'pl42', cat:'🍲 Plats uniques', name:'Bricks poulet curry', url:''},
+  {id:'pl43', cat:'🍲 Plats uniques', name:'Gratin de brocoli', url:'https://www.instagram.com/reel/C35cQdWMmcb/'},
+  {id:'pl44', cat:'🍲 Plats uniques', name:'Crevettes tomate cerise courgette', url:'https://www.facebook.com/share/p/GFaz2wj5N6MBc48L/'},
+  {id:'pl45', cat:'🍲 Plats uniques', name:'Tacos poulet / poivrons / avocat', url:'https://www.instagram.com/reel/C6OCLJ-oyWK/'},
+  {id:'pl46', cat:'🍲 Plats uniques', name:'Dahl de lentilles corail', url:'https://www.instagram.com/reel/C5d4GsPi6TN/'},
+  {id:'pl47', cat:'🍲 Plats uniques', name:'Galettes de légumes', url:'https://www.instagram.com/reel/C8hiwoVNwbo/'},
+  {id:'pl48', cat:'🍲 Plats uniques', name:'Bœuf carotte', url:''},
+  {id:'pl49', cat:'🍲 Plats uniques', name:'Cake courgette fêta', url:'https://www.instagram.com/reel/C-sqSEFM-6K/'},
+  {id:'pl50', cat:'🍲 Plats uniques', name:'Gratin courgettes tomates', url:''},
+  {id:'pl51', cat:'🍲 Plats uniques', name:'Aubergines farcies', url:''},
+  {id:'pl52', cat:'🍲 Plats uniques', name:'Gratin courgettes fêta', url:''},
+  {id:'pl53', cat:'🍲 Plats uniques', name:'Courgettes parmesan', url:'https://www.instagram.com/reel/C_z9DkYM5bZ/'},
+  {id:'pl54', cat:'🍲 Plats uniques', name:'Aubergine farcie crème viande hachée', url:'https://vm.tiktok.com/ZGeo2ox5e/'},
+  {id:'pl55', cat:'🍲 Plats uniques', name:'Avocado toast', url:''},
+  {id:'pl56', cat:'🍲 Plats uniques', name:'Butternut gruyère lardons', url:'https://www.instagram.com/reel/DBDsrRrM5aA/'},
+  {id:'pl57', cat:'🍲 Plats uniques', name:'Curry de patate douce', url:'https://www.instagram.com/p/CzJGfMiIdYl/'},
+  {id:'pl58', cat:'🍲 Plats uniques', name:'Cannelloni chorizo', url:''},
+  {id:'pl59', cat:'🍲 Plats uniques', name:'Hachis Parmentier', url:'https://www.marmiton.org/recettes/recette_hachis-parmentier-aux-carottes_31771.aspx'},
+  {id:'pl60', cat:'🍲 Plats uniques', name:'Brownie brocoli jambon', url:'https://www.instagram.com/reel/DG6BKqrIrLs/'},
+  {id:'pl61', cat:'🍲 Plats uniques', name:'Poireaux carbonara', url:'https://www.instagram.com/reel/DHBEedtMPHR/'},
+  {id:'pl62', cat:'🍲 Plats uniques', name:'Poulet air fryer', url:'https://www.instagram.com/reel/DDhrkfuoPIY/'},
+  {id:'pl63', cat:'🍲 Plats uniques', name:'Couscous', url:'https://www.instagram.com/reel/DGqhGYFICyT/'},
+  {id:'pl64', cat:'🍲 Plats uniques', name:'Cannelloni ricotta épinard', url:'https://vm.tiktok.com/ZNdevYbyy/'},
+  {id:'pl65', cat:'🍲 Plats uniques', name:'Ratatouille quinoa œuf', url:'https://vm.tiktok.com/ZNdRNM6po/'},
+  {id:'pl66', cat:'🍲 Plats uniques', name:'Wrap courgette', url:'https://www.instagram.com/reel/DHOpJ-hMvBL/'},
+  {id:'pl67', cat:'🍲 Plats uniques', name:'Patate douce', url:'https://vm.tiktok.com/ZNdY4neuF/'},
+  {id:'pl68', cat:'🍲 Plats uniques', name:'Poulet à la toscane', url:'https://vm.tiktok.com/ZNdYV1x9s/'},
+  {id:'pl69', cat:'🍲 Plats uniques', name:'Curry pois chiche', url:''},
+  {id:'pl70', cat:'🍲 Plats uniques', name:'Gratin viande hachée pomme de terre courgette', url:'https://www.instagram.com/reel/DIwTjoXoLpB/'},
+  {id:'pl71', cat:'🍲 Plats uniques', name:'Parmentier courgette', url:'https://vm.tiktok.com/ZNdjV1cxB/'},
+  {id:'pl72', cat:'🍲 Plats uniques', name:'Gratin ravioles truite courgette', url:'https://vm.tiktok.com/ZNdjGWKpC/'},
+  {id:'pl73', cat:'🍲 Plats uniques', name:'Croc madame', url:''},
+  {id:'pl74', cat:'🍲 Plats uniques', name:'Éventail aubergine', url:'https://www.instagram.com/reel/DJKE5P4MWe0/'},
+  {id:'pl75', cat:'🍲 Plats uniques', name:'Soupe & grilled cheese', url:''},
+  {id:'pl76', cat:'🍲 Plats uniques', name:'Rösti pomme de terre', url:''},
+  {id:'pl77', cat:'🍲 Plats uniques', name:'Wok de bœuf', url:'https://vm.tiktok.com/ZNdMkMpFF/'},
+  {id:'pl78', cat:'🍲 Plats uniques', name:'Bricks courgette fêta miel', url:''},
+  {id:'pl79', cat:'🍲 Plats uniques', name:'Poulet sauté poivrons riz', url:'https://vm.tiktok.com/ZNdM75evt/'},
+  {id:'pl80', cat:'🍲 Plats uniques', name:'Paupiette de poulet', url:''},
+  {id:'pl81', cat:'🍲 Plats uniques', name:'Bœuf légumes riz', url:'https://www.facebook.com/share/r/1AooMhq7de/'},
+  {id:'pl82', cat:'🍲 Plats uniques', name:'Curry poivron', url:''},
+  {id:'pl83', cat:'🍲 Plats uniques', name:'Poulet curry pomme de terre', url:'https://www.instagram.com/reel/DHbszbOghtF/'},
+  {id:'pl84', cat:'🍲 Plats uniques', name:'Tacos', url:'https://vm.tiktok.com/ZNdDXhPey/'},
+  {id:'pl85', cat:'🍲 Plats uniques', name:'Moussaka (variante)', url:'https://vm.tiktok.com/ZNRcRxueb/'},
+  {id:'pl86', cat:'🍲 Plats uniques', name:'Patate douce farcie', url:'https://www.instagram.com/reel/DOdMcWHDK9i/'},
+  {id:'pl87', cat:'🍲 Plats uniques', name:'Lasagne butternut', url:'https://vm.tiktok.com/ZNdgrkmoY/'},
+  {id:'pl88', cat:'🍲 Plats uniques', name:'Gratin butternut pomme de terre', url:''},
+  {id:'pl89', cat:'🍲 Plats uniques', name:'Bœuf carottes', url:''},
+  {id:'pl90', cat:'🍲 Plats uniques', name:'Gratin raviole', url:''},
+  {id:'pl91', cat:'🍲 Plats uniques', name:'Gratin chou-fleur', url:''},
+  {id:'pl92', cat:'🍲 Plats uniques', name:'Pancakes courgette', url:'https://www.instagram.com/reel/DO3wddmjObv/'},
+  {id:'pl93', cat:'🍲 Plats uniques', name:'Muffin courgette vache qui rit', url:''},
+  {id:'pl94', cat:'🍲 Plats uniques', name:'Aubergines panées', url:'https://vm.tiktok.com/ZNdsm8x56/'},
+  {id:'pl95', cat:'🍲 Plats uniques', name:'Crumble potiron fêta', url:'https://www.instagram.com/reel/DOyhKpmCjzf/'},
+  {id:'pl96', cat:'🍲 Plats uniques', name:'Gratin pomme de terre poulet boursin', url:'https://vm.tiktok.com/ZNdGhWWvb/'},
+  {id:'pl97', cat:'🍲 Plats uniques', name:'Soupe gyoza', url:'https://www.instagram.com/reel/DPUFqwoCDBh/'},
+  {id:'pl98', cat:'🍲 Plats uniques', name:'Boulette purée petit pois carottes', url:''},
+  {id:'pl99', cat:'🍲 Plats uniques', name:'Gratin butternut brocoli mozza', url:'https://vm.tiktok.com/ZNdnPmnS9/'},
+  {id:'pl100', cat:'🍲 Plats uniques', name:'Lasagne poulet Alfredo', url:'https://vm.tiktok.com/ZNdnvYqYB/'},
+  {id:'pl101', cat:'🍲 Plats uniques', name:'Courges farcies', url:'https://www.instagram.com/reel/DPwJWeCiNul/'},
+  {id:'pl102', cat:'🍲 Plats uniques', name:'Tchoutchouka', url:''},
+  {id:'pl103', cat:'🍲 Plats uniques', name:'Blanquette poulet', url:'https://vm.tiktok.com/ZNdc8E7pt/'},
+  {id:'pl104', cat:'🍲 Plats uniques', name:'Gratin pâte jambon', url:''},
+  {id:'pl105', cat:'🍲 Plats uniques', name:'Haut de cuisse – purée', url:''},
+  {id:'pl106', cat:'🍲 Plats uniques', name:'Parmigiana', url:'https://vm.tiktok.com/ZNdvtbPVT/'},
+  {id:'pl107', cat:'🍲 Plats uniques', name:'Purée patate douce steak', url:''},
+  {id:'pl108', cat:'🍲 Plats uniques', name:'Omelette haricots verts', url:''},
+  {id:'pl109', cat:'🍲 Plats uniques', name:'Boulette bœuf PDT haricots', url:'https://www.instagram.com/reel/DP4C2ZQjDwU/'},
+  {id:'pl110', cat:'🍲 Plats uniques', name:'Gratin potimarron fêta', url:'https://www.instagram.com/reel/DQM6N8tAt0r/'},
+  {id:'pl111', cat:'🍲 Plats uniques', name:'Lasagne poireaux bacon', url:'https://www.instagram.com/reel/DQmhfE_DUPJ/'},
+  {id:'pl112', cat:'🍲 Plats uniques', name:'Patate douce poireaux', url:'https://vm.tiktok.com/ZNdTCkAaa/'},
+  {id:'pl113', cat:'🍲 Plats uniques', name:'Lasagne volognaise', url:''},
+  {id:'pl114', cat:'🍲 Plats uniques', name:'Lasagne poulet butternut', url:'https://www.instagram.com/reel/DPjpcwdCHS6/'},
+  {id:'pl115', cat:'🍲 Plats uniques', name:'Boulette poulet courgette fêta', url:'https://www.instagram.com/reel/DM8G5yaiUmg/'},
+  {id:'pl116', cat:'🍲 Plats uniques', name:'Wrap chèvre', url:''},
+  {id:'pl117', cat:'🍲 Plats uniques', name:'Boulettes à la grecque', url:'https://www.instagram.com/reel/DWLsFZQjJhn/'},
+  {id:'pl118', cat:'🍲 Plats uniques', name:'Bowl riz viande hachée', url:'https://vm.tiktok.com/ZNRTLACVE/'},
+  {id:'pl119', cat:'🍲 Plats uniques', name:'Bagel saumon avocat', url:''},
+  {id:'pl120', cat:'🍲 Plats uniques', name:'Feuilleté courgette bœuf', url:'https://www.instagram.com/reel/C9xoHZts_yx/'},
+  {id:'pl121', cat:'🍲 Plats uniques', name:'Curry chorizo', url:'https://www.instagram.com/reel/DL5MNsqI09L/'},
+  {id:'pl122', cat:'🍲 Plats uniques', name:'Chou chinois', url:''},
+  {id:'pl123', cat:'🍲 Plats uniques', name:'Poivrons farcis', url:'https://www.instagram.com/reel/DYkKd52suZd/'},
+  {id:'pl124', cat:'🍲 Plats uniques', name:'Gratin de ravioles', url:'https://www.instagram.com/reel/DYm1jdqqin_/'},
+  {id:'pl125', cat:'🍲 Plats uniques', name:'Frittata courgette chèvre tomates', url:'https://www.instagram.com/reel/DZGAnujK1PA/'},
+  {id:'pl126', cat:'🍲 Plats uniques', name:'Frittata', url:'https://vm.tiktok.com/ZNR4ddjRY/'},
+  {id:'pl127', cat:'🍲 Plats uniques', name:'Gazpacho', url:''},
+  {id:'pl128', cat:'🍲 Plats uniques', name:'Taboulé', url:''},
+  {id:'pl129', cat:'🍲 Plats uniques', name:'Beignets courgettes fêta', url:'https://vm.tiktok.com/ZNR99asR6/'},
+  {id:'pl130', cat:'🍲 Plats uniques', name:'Aubergine tomate fêta', url:''},
+  {id:'pl131', cat:'🍲 Plats uniques', name:'Poke gyoza / nems', url:'https://vm.tiktok.com/ZNRWdDuUU/'},
+  {id:'pl132', cat:'🍲 Plats uniques', name:'Poulet grillé parmesan', url:'https://www.instagram.com/reel/DYzw4ANs_Dk/'},
+  {id:'pl133', cat:'🍲 Plats uniques', name:'Blanquette poulet (variante)', url:'https://www.instagram.com/reel/DYxKqKMsX9K/'},
+  {id:'pl134', cat:'🍲 Plats uniques', name:'Escalope milanaise', url:'https://vm.tiktok.com/ZNRWKgD76/'},
+  {id:'pl135', cat:'🍲 Plats uniques', name:'Lasagne de courgette (variante)', url:'https://vm.tiktok.com/ZNR7HJtys/'},
+  {id:'pl136', cat:'🍲 Plats uniques', name:'Boulette poulet courgettes', url:'https://vm.tiktok.com/ZNRvVo4XD/'},
+  {id:'pl137', cat:'🍲 Plats uniques', name:'Semoule poulet sauce tomate', url:'https://vm.tiktok.com/ZNRg8UC71/'},
+  {id:'pl138', cat:'🍲 Plats uniques', name:'Rolls poulet champignons', url:'https://vm.tiktok.com/ZNRgsNMKE/'},
+  {id:'pl139', cat:'🍲 Plats uniques', name:'Poulet miel moutarde', url:''},
+  {id:'pl140', cat:'🍲 Plats uniques', name:'Boulettes bœuf riz sauce tomate', url:''},
+  {id:'pl141', cat:'🍲 Plats uniques', name:'Gratin pomme de terre poulet', url:'https://vm.tiktok.com/ZNRGSrWVg/'},
+  {id:'pl142', cat:'🍲 Plats uniques', name:'Curry poulet courgettes', url:'https://vm.tiktok.com/ZNRHTMdph/'},
+  {id:'pl143', cat:'🍲 Plats uniques', name:'Ragoût de légumes', url:'https://vm.tiktok.com/ZNR9eAjQx/'},
+  {id:'pl144', cat:'🍲 Plats uniques', name:'Blanquette saumon / poulet', url:''},
+  {id:'pl145', cat:'🍲 Plats uniques', name:'Steak champignons', url:''},
+  {id:'pl146', cat:'🍲 Plats uniques', name:'Cabillaud croustillant & riz', url:'https://www.instagram.com/reel/DJ8g_CQCJck/'},
+  {id:'pl147', cat:'🍲 Plats uniques', name:'Courgette farcie poulet curry', url:'https://www.instagram.com/reel/DJ6-_basmzo/'},
+  {id:'pl148', cat:'🍲 Plats uniques', name:'Filet poisson légumes', url:'https://vm.tiktok.com/ZNdBxpB8A/'},
+  {id:'pl149', cat:'🍲 Plats uniques', name:'Poulet courgette riz', url:'https://www.instagram.com/reel/DK909L4ofTr/'},
+  {id:'pl150', cat:'🍲 Plats uniques', name:'Ragoût bœuf carottes', url:'https://vm.tiktok.com/ZNRSgLKoV/'},
+  {id:'pl151', cat:'🍲 Plats uniques', name:'Saumon haricots verts PDT', url:''},
+  {id:'pl152', cat:'🍲 Plats uniques', name:'Effiloché poulet', url:'https://vm.tiktok.com/ZNRPYUk73/'},
+  {id:'pl153', cat:'🍲 Plats uniques', name:'Petit pain poulet curry', url:'https://vm.tiktok.com/ZNR5KVeKs/'},
+  {id:'pl154', cat:'🍲 Plats uniques', name:'Gratin aubergine mozza', url:'https://vm.tiktok.com/ZNRuCPbWx/'},
+  {id:'pl155', cat:'🍲 Plats uniques', name:'Poireaux jambon', url:'https://vm.tiktok.com/ZNRHfH65u/'},
+  {id:'pl156', cat:'🍲 Plats uniques', name:'Bœuf miel balsamique', url:'https://vm.tiktok.com/ZNR6C4Mbu/'},
+  {id:'pl157', cat:'🍲 Plats uniques', name:'Cake courgette chèvre', url:'https://www.instagram.com/reel/DTgK5t-iFKX/'},
+  {id:'pl158', cat:'🍲 Plats uniques', name:'Cabillaud vapeur purée carottes sauce citronnée', url:'https://www.monsieur-cuisine.com/fr/recipe/cabillaud-vapeur-puree-de-carottes-sauce-citronnee'},
+  {id:'pl159', cat:'🍲 Plats uniques', name:'Cabillaud lait coco', url:'https://vm.tiktok.com/ZNRUP3USo/'},
+  {id:'pl160', cat:'🍲 Plats uniques', name:'Poêlée poulet légumes', url:'https://www.instagram.com/reel/DQE86IEjDp1/'},
+  {id:'pl161', cat:'🍲 Plats uniques', name:'Boulette de courgette', url:''},
+  {id:'pl162', cat:'🍲 Plats uniques', name:'Purée carotte', url:''},
+  {id:'pl163', cat:'🍲 Plats uniques', name:'Polenta aux champignons', url:''},
+  {id:'pl164', cat:'🍲 Plats uniques', name:'Poulet citron asperge', url:''},
+  {id:'pl165', cat:'🍲 Plats uniques', name:'Tagliatelle courgette saumon', url:'https://vm.tiktok.com/ZNRnG3h95/'},
+  {id:'pl166', cat:'🍲 Plats uniques', name:'Sauté de porc', url:''},
+  {id:'pl167', cat:'🍲 Plats uniques', name:'Filet de canard', url:''},
+  {id:'pl168', cat:'🍲 Plats uniques', name:'Bricks courgette chèvre', url:'https://vm.tiktok.com/ZNRTLeXaC/'},
+  {id:'pl169', cat:'🍲 Plats uniques', name:'Burger', url:'https://vm.tiktok.com/ZNRxtFVBJ/'},
+  {id:'pl170', cat:'🍲 Plats uniques', name:'Gyoza', url:''},
+  {id:'pl171', cat:'🍲 Plats uniques', name:'Conchiglione ricotta épinard', url:''},
+  {id:'pl172', cat:'🍲 Plats uniques', name:'Cannelloni bolognaise', url:''},
+  {id:'pl173', cat:'🍲 Plats uniques', name:'Courgette et tomate farcies', url:''},
+
+  // DESSERTS
+  {id:'d1', cat:'🍰 Desserts', name:'Gâteau skyr framboise', url:'https://www.instagram.com/reel/C2E-HWcoCE_/'},
+  {id:'d2', cat:'🍰 Desserts', name:'Muffin marbré', url:'https://www.instagram.com/p/C3Nv3_joT5p/'},
+  {id:'d3', cat:'🍰 Desserts', name:'Cake pépites de chocolat', url:''},
+  {id:'d4', cat:'🍰 Desserts', name:'Muffins', url:''},
+  {id:'d5', cat:'🍰 Desserts', name:'Brownie banane chocolat', url:'https://www.instagram.com/reel/C3k_Gy9scXx/'},
+  {id:'d6', cat:'🍰 Desserts', name:'Marbré', url:'https://vm.tiktok.com/ZNd3x2qna/'},
+];
+
+// STATE
+let activeCat = 'Tout';
+let recipes = [];
+
+function loadRecipes() {
+  try {
+    const stored = localStorage.getItem('mes_recettes_v2');
+    if (stored) {
+      recipes = JSON.parse(stored);
+    } else {
+      recipes = DEFAULT_RECIPES.map(r => ({...r}));
+      save();
+    }
+  } catch(e) {
+    recipes = DEFAULT_RECIPES.map(r => ({...r}));
+  }
+}
+
+function save() {
+  try { localStorage.setItem('mes_recettes_v2', JSON.stringify(recipes)); } catch(e) {}
+}
+
+function render() {
+  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+  const app = document.getElementById('app');
+
+  let filtered = recipes;
+  if (activeCat !== 'Tout') filtered = filtered.filter(r => r.cat === activeCat);
+  if (q) filtered = filtered.filter(r => r.name.toLowerCase().includes(q));
+
+  if (filtered.length === 0) {
+    app.innerHTML = '<div class="empty">Aucune recette trouvée 🍽</div>';
+    return;
+  }
+
+  // Group by category
+  const groups = {};
+  filtered.forEach(r => {
+    if (!groups[r.cat]) groups[r.cat] = [];
+    groups[r.cat].push(r);
+  });
+
+  let html = '';
+  const catOrder = CATEGORIES.filter(c => groups[c]);
+
+  catOrder.forEach(cat => {
+    const items = groups[cat];
+    if (activeCat === 'Tout') {
+      html += `<div class="section-title">${cat} <span style="font-weight:400;color:#BBB">(${items.length})</span></div>`;
+    }
+    html += '<div class="recipe-list">';
+    items.forEach(r => {
+      const linkBtn = r.url
+        ? `<a class="btn-link" href="${r.url}" target="_blank">Voir →</a>`
+        : `<span class="no-link">pas de lien</span>`;
+      html += `
+        <div class="recipe-item">
+          <span class="recipe-name">${r.name}</span>
+          <div class="recipe-actions">
+            ${linkBtn}
+            <button class="btn-delete" onclick="deleteRecipe('${r.id}')" title="Supprimer">×</button>
+          </div>
+        </div>`;
+    });
+    html += '</div>';
+  });
+
+  // Count
+  html = `<div class="count-badge">${filtered.length} recette${filtered.length > 1 ? 's' : ''}</div>` + html;
+  app.innerHTML = html;
+}
+
+function renderCategories() {
+  const bar = document.getElementById('categoryBar');
+  const allCats = ['Tout', ...CATEGORIES];
+  bar.innerHTML = allCats.map(c => {
+    const label = c === 'Tout' ? 'Tout' : c;
+    return `<button class="pill ${activeCat === c ? 'active' : ''}" onclick="setCategory('${c}')">${label}</button>`;
+  }).join('');
+}
+
+function setCategory(cat) {
+  activeCat = cat;
+  renderCategories();
+  render();
+}
+
+function deleteRecipe(id) {
+  recipes = recipes.filter(r => r.id !== id);
+  save();
+  render();
+}
+
+function openModal() {
+  document.getElementById('modalOverlay').classList.add('open');
+  document.getElementById('inputName').focus();
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.getElementById('inputName').value = '';
+  document.getElementById('inputUrl').value = '';
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+}
+
+function saveRecipe() {
+  const name = document.getElementById('inputName').value.trim();
+  if (!name) { document.getElementById('inputName').focus(); return; }
+  const cat = document.getElementById('inputCat').value;
+  const url = document.getElementById('inputUrl').value.trim();
+  const id = 'u' + Date.now();
+  recipes.push({ id, cat, name, url });
+  save();
+  closeModal();
+  setCategory(cat);
+  render();
+}
+
+// INIT
+loadRecipes();
+renderCategories();
+render();
+</script>
+</body>
+</html>
